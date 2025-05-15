@@ -12,10 +12,10 @@ import json
 import hashlib
 from tqdm import tqdm
 
-class AdvancedSteganographyApp:
+class SteganographyApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Advanced Image Steganography")
+        self.root.title("Image Steganography")
         self.root.geometry("1000x800")
         
         # Initialize variables
@@ -55,7 +55,8 @@ class AdvancedSteganographyApp:
         left_frame.grid(row=0, column=0, padx=10, pady=5, sticky="nsew")
 
         ttk.Button(left_frame, text="Select Source Image", command=self.browse_file).pack(pady=5)
-        self.file_label = ttk.Label(left_frame, text="No source image selected", wraplength=200)
+        self.file_label = ttk.Label(left_frame, text="No source image selected\nSupported formats: PNG, JPG, BMP, TIFF", 
+                                  wraplength=200, justify="center")
         self.file_label.pack(pady=5)
 
         self.original_preview = ttk.Label(left_frame)
@@ -66,7 +67,7 @@ class AdvancedSteganographyApp:
         right_frame.grid(row=0, column=1, padx=10, pady=5, sticky="nsew")
 
         # Data type selection
-        ttk.Label(right_frame, text="Data Type:").pack(pady=5)
+        ttk.Label(right_frame, text="Select Data Type:").pack(pady=5)
         self.data_type = tk.StringVar(value="text")
         ttk.Radiobutton(right_frame, text="Text Message", variable=self.data_type, 
                        value="text", command=self.toggle_data_input).pack()
@@ -84,35 +85,43 @@ class AdvancedSteganographyApp:
         self.file_frame = ttk.Frame(right_frame)
         ttk.Button(self.file_frame, text="Select File to Hide", 
                   command=self.select_hide_file).pack(pady=5)
-        self.hide_file_label = ttk.Label(self.file_frame, text="No file selected", 
-                                       wraplength=200)
+        self.hide_file_label = ttk.Label(self.file_frame, text="No file selected\nSelect a file to hide", 
+                                       wraplength=200, justify="center")
         self.hide_file_label.pack(pady=5)
 
         # Encryption options
-        enc_frame = ttk.LabelFrame(right_frame, text="Encryption", padding="5")
+        enc_frame = ttk.LabelFrame(right_frame, text="Encryption (Optional)", padding="5")
         enc_frame.pack(pady=5, fill='x')
         
-        ttk.Label(enc_frame, text="Password (optional):").pack()
+        ttk.Label(enc_frame, text="Password:").pack()
         self.password_entry = ttk.Entry(enc_frame, show="*")
         self.password_entry.pack(pady=5)
+        ttk.Label(enc_frame, text="Leave empty for no encryption", 
+                 foreground='gray', wraplength=200, justify="center").pack()
 
         # Channel selection
-        channel_frame = ttk.LabelFrame(right_frame, text="Channels", padding="5")
+        channel_frame = ttk.LabelFrame(right_frame, text="Color Channels", padding="5")
         channel_frame.pack(pady=5, fill='x')
         
         self.use_red = tk.BooleanVar(value=True)
         self.use_green = tk.BooleanVar(value=False)
         self.use_blue = tk.BooleanVar(value=False)
         
-        ttk.Checkbutton(channel_frame, text="Red", variable=self.use_red).pack()
-        ttk.Checkbutton(channel_frame, text="Green", variable=self.use_green).pack()
-        ttk.Checkbutton(channel_frame, text="Blue", variable=self.use_blue).pack()
+        ttk.Label(channel_frame, text="Select channels to use:").pack()
+        ttk.Checkbutton(channel_frame, text="Red Channel", variable=self.use_red, 
+                       command=self.update_capacity).pack()
+        ttk.Checkbutton(channel_frame, text="Green Channel", variable=self.use_green, 
+                       command=self.update_capacity).pack()
+        ttk.Checkbutton(channel_frame, text="Blue Channel", variable=self.use_blue, 
+                       command=self.update_capacity).pack()
+        ttk.Label(channel_frame, text="At least one channel must be selected", 
+                 foreground='gray', wraplength=200, justify="center").pack()
 
         # Progress
         self.encode_progress = ttk.Progressbar(right_frame, length=200, mode='determinate')
         self.encode_progress.pack(pady=5)
         
-        self.status_label = ttk.Label(right_frame, text="Ready", wraplength=200)
+        self.status_label = ttk.Label(right_frame, text="Ready to encode", wraplength=200)
         self.status_label.pack(pady=5)
 
         # Encode button
@@ -130,6 +139,10 @@ class AdvancedSteganographyApp:
         ttk.Button(left_frame, text="Select Image to Decode", 
                   command=self.select_decode_image).pack(pady=5)
         
+        self.decode_file_label = ttk.Label(left_frame, text="No image selected\nSelect an image with hidden data", 
+                                         wraplength=200, justify="center")
+        self.decode_file_label.pack(pady=5)
+        
         self.stego_preview = ttk.Label(left_frame)
         self.stego_preview.pack(pady=5)
 
@@ -141,18 +154,23 @@ class AdvancedSteganographyApp:
         ttk.Label(right_frame, text="Password (if encrypted):").pack()
         self.decode_password_entry = ttk.Entry(right_frame, show="*")
         self.decode_password_entry.pack(pady=5)
+        ttk.Label(right_frame, text="Leave empty if no password was used", 
+                 foreground='gray', wraplength=200, justify="center").pack()
 
         # Channel selection for decoding
-        channel_frame = ttk.LabelFrame(right_frame, text="Channels to Check", padding="5")
+        channel_frame = ttk.LabelFrame(right_frame, text="Color Channels", padding="5")
         channel_frame.pack(pady=5, fill='x')
         
         self.decode_red = tk.BooleanVar(value=True)
         self.decode_green = tk.BooleanVar(value=False)
         self.decode_blue = tk.BooleanVar(value=False)
         
-        ttk.Checkbutton(channel_frame, text="Red", variable=self.decode_red).pack()
-        ttk.Checkbutton(channel_frame, text="Green", variable=self.decode_green).pack()
-        ttk.Checkbutton(channel_frame, text="Blue", variable=self.decode_blue).pack()
+        ttk.Label(channel_frame, text="Select channels to check:").pack()
+        ttk.Checkbutton(channel_frame, text="Red Channel", variable=self.decode_red).pack()
+        ttk.Checkbutton(channel_frame, text="Green Channel", variable=self.decode_green).pack()
+        ttk.Checkbutton(channel_frame, text="Blue Channel", variable=self.decode_blue).pack()
+        ttk.Label(channel_frame, text="Select the same channels used during encoding", 
+                 foreground='gray', wraplength=200, justify="center").pack()
 
         # Decode button
         ttk.Button(right_frame, text="Decode", command=self.decode_message).pack(pady=10)
@@ -228,7 +246,7 @@ class AdvancedSteganographyApp:
                 self.capacity_label.config(
                     text=f"Maximum capacity:\n{bytes_capacity:,} bytes\n"
                          f"({bytes_capacity/1024:.2f} KB)\n"
-                         f"Using {channels} color channel(s)")
+                         f"Using {channels} color channel{'s' if channels > 1 else ''}")
                 
                 # Update statistics
                 self.update_image_stats(img)
@@ -326,7 +344,19 @@ class AdvancedSteganographyApp:
             messagebox.showerror("Error", "Please select a source image first")
             return
 
+        # Validate channel selection
+        channels = []
+        if self.use_red.get(): channels.append(0)
+        if self.use_green.get(): channels.append(1)
+        if self.use_blue.get(): channels.append(2)
+        
+        if not channels:
+            messagebox.showerror("Error", "Please select at least one color channel")
+            return
+
         try:
+            self.update_status("Preparing to encode...")
+            
             # Get data to hide
             if self.data_type.get() == "text":
                 message = self.message_text.get("1.0", tk.END).strip()
@@ -343,11 +373,14 @@ class AdvancedSteganographyApp:
                     data = f.read()
                 is_file = True
 
+            self.update_status("Processing data...")
+
             # Prepare metadata
             metadata = {
                 "is_file": is_file,
                 "filename": Path(self.hide_file_path).name if is_file else None,
-                "salt": base64.b64encode(self.salt).decode()
+                "salt": base64.b64encode(self.salt).decode(),
+                "channels": channels
             }
             
             # Convert metadata to bytes and prepare final data
@@ -357,21 +390,26 @@ class AdvancedSteganographyApp:
             # Encrypt if password provided
             password = self.password_entry.get()
             if password:
+                self.update_status("Encrypting data...")
                 f = self.get_encryption_key(password)
                 final_data = f.encrypt(final_data)
 
             # Convert to binary
-            binary_data = self.encode_data(final_data, [])
+            self.update_status("Converting data...")
+            binary_data = self.encode_data(final_data, channels)
 
             # Open and prepare image
+            self.update_status("Preparing image...")
             img = Image.open(self.selected_file)
             if img.mode != 'RGBA':
                 img = img.convert('RGBA')
 
             # Encode data
+            self.update_status("Encoding data into image...")
             new_pixels = self.encode_to_channels(img, binary_data)
 
             # Save encoded image
+            self.update_status("Ready to save...")
             save_path = filedialog.asksaveasfilename(
                 defaultextension=".png",
                 filetypes=[("PNG Files", "*.png")],
@@ -380,17 +418,20 @@ class AdvancedSteganographyApp:
             )
             
             if not save_path:
+                self.update_status("Encoding cancelled")
                 return
 
             # Create new image with encoded data
+            self.update_status("Saving encoded image...")
             new_img = Image.new('RGBA', img.size)
             new_img.putdata(new_pixels)
             new_img.save(save_path, 'PNG')
 
             self.show_preview(save_path, self.stego_preview)
-            messagebox.showinfo("Success", "Data encoded successfully!")
+            self.show_encoding_success(save_path)
             
         except Exception as e:
+            self.update_status(f"Error: {str(e)}", is_error=True)
             messagebox.showerror("Error", str(e))
 
     def decode_message(self):
@@ -415,6 +456,7 @@ class AdvancedSteganographyApp:
                 return
 
             # Extract binary data
+            self.update_status("Extracting hidden data...")
             binary_message = ""
             pixels = list(img.getdata())
             
@@ -432,6 +474,7 @@ class AdvancedSteganographyApp:
                 raise ValueError("No hidden data found or invalid format")
 
             # Convert binary to bytes
+            self.update_status("Processing extracted data...")
             data_bytes = bytearray()
             for i in range(0, len(binary_message), 8):
                 byte = binary_message[i:i+8]
@@ -441,6 +484,7 @@ class AdvancedSteganographyApp:
             # Try to decrypt if password provided
             password = self.decode_password_entry.get()
             if password:
+                self.update_status("Decrypting data...")
                 try:
                     f = self.get_encryption_key(password)
                     data_bytes = f.decrypt(bytes(data_bytes))
@@ -451,6 +495,11 @@ class AdvancedSteganographyApp:
             metadata_length = int.from_bytes(data_bytes[:4], 'big')
             metadata = json.loads(data_bytes[4:4+metadata_length].decode())
             actual_data = data_bytes[4+metadata_length:]
+
+            # Verify channels match
+            if 'channels' in metadata and set(channels) != set(metadata['channels']):
+                self.show_channel_warning(metadata['channels'])
+                return
 
             # Handle the data based on metadata
             if metadata["is_file"]:
@@ -465,14 +514,19 @@ class AdvancedSteganographyApp:
                     f"Size: {len(actual_data):,} bytes\n"
                     f"Click 'Save Decoded File' to save it.")
                 self.decoded_text.config(state='disabled')
+                
+                self.update_status("Found hidden file. Click 'Save Decoded File' to save it.")
             else:
                 self.save_decoded_button.pack_forget()
                 self.decoded_text.config(state='normal')
                 self.decoded_text.delete(1.0, tk.END)
                 self.decoded_text.insert(tk.END, actual_data.decode())
                 self.decoded_text.config(state='disabled')
+                
+                self.update_status("Successfully decoded hidden message.")
 
         except Exception as e:
+            self.update_status(f"Error: {str(e)}", is_error=True)
             messagebox.showerror("Error", str(e))
 
     def select_hide_file(self):
@@ -487,6 +541,18 @@ class AdvancedSteganographyApp:
         )
         if self.decode_file_path:
             self.show_preview(self.decode_file_path, self.stego_preview)
+            self.decode_file_label.config(
+                text=f"Selected: {Path(self.decode_file_path).name}\n"
+                     f"Ready to decode"
+            )
+            
+            # Reset the decoded text area
+            self.decoded_text.config(state='normal')
+            self.decoded_text.delete(1.0, tk.END)
+            self.decoded_text.config(state='disabled')
+            
+            # Hide the save button if it was visible
+            self.save_decoded_button.pack_forget()
 
     def save_decoded_file(self):
         if hasattr(self, 'decoded_file_data') and hasattr(self, 'decoded_filename'):
@@ -499,7 +565,56 @@ class AdvancedSteganographyApp:
                     f.write(self.decoded_file_data)
                 messagebox.showinfo("Success", "File saved successfully!")
 
+    def update_capacity(self):
+        """Update the capacity display when channels are changed"""
+        try:
+            if self.selected_file:
+                img = Image.open(self.selected_file)
+                width, height = img.size
+                channels = sum([self.use_red.get(), self.use_green.get(), self.use_blue.get()])
+                total_bits = width * height * channels
+                bytes_capacity = total_bits // 8
+                
+                self.capacity_label.config(
+                    text=f"Maximum capacity:\n{bytes_capacity:,} bytes\n"
+                         f"({bytes_capacity/1024:.2f} KB)\n"
+                         f"Using {channels} color channel{'s' if channels > 1 else ''}")
+                
+                # Update statistics
+                self.update_image_stats(img)
+        except Exception as e:
+            self.capacity_label.config(text=f"Error calculating capacity: {str(e)}")
+
+    def update_status(self, message, is_error=False):
+        """Update the status label with a message"""
+        self.status_label.config(
+            text=message,
+            foreground='red' if is_error else 'black'
+        )
+        self.root.update_idletasks()
+
+    def show_channel_warning(self, required_channels):
+        """Show a warning about mismatched channels"""
+        channel_names = []
+        if 0 in required_channels: channel_names.append("Red")
+        if 1 in required_channels: channel_names.append("Green")
+        if 2 in required_channels: channel_names.append("Blue")
+        
+        message = "Please select these channels to decode:\n" + ", ".join(channel_names)
+        messagebox.showwarning("Channel Mismatch", message)
+
+    def show_encoding_success(self, save_path):
+        """Show success message after encoding"""
+        self.status_label.config(
+            text=f"Successfully encoded!\nSaved as: {Path(save_path).name}",
+            foreground='green'
+        )
+        messagebox.showinfo(
+            "Success",
+            f"Data encoded successfully!\nSaved as: {Path(save_path).name}"
+        )
+
 if __name__ == "__main__":
     root = tk.Tk()
-    app = AdvancedSteganographyApp(root)
+    app = SteganographyApp(root)
     root.mainloop() 
